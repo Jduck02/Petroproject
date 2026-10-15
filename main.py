@@ -40,49 +40,44 @@ def read_pdf(file_path):
     return text
 
 def run():
-    pdf_path = get_latest_pdf()
-    if not pdf_path:
-        print("No PDF found in reports/ folder!")
+    pdf_files = glob.glob(os.path.join(REPORT_FOLDER, "*.pdf"))
+    if not pdf_files:
+        print("No PDFs found!")
         return
 
-    print(f"Reading: {pdf_path}")
-    raw_text = read_pdf(pdf_path)
+    all_market_data = []
+    all_summaries = []
 
-    # Cut off text if it's too long (keep first ~15,000 chars to avoid hitting token limits)
-    raw_text = raw_text[:15000]
+    for pdf_path in pdf_files:
+        print(f"Processing: {pdf_path}")
+        raw_text = read_pdf(pdf_path)
+        raw_text = raw_text[:10000] # Stay within AI limits
 
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Extract commodity prices and a brief summary."},
+                {"role": "user", "content": f"Extract market data from this report:\n{raw_text}"}
+            ],
+            response_format=PetrochemicalReport,
+        )
+        
+        parsed = completion.choices[0].message.parsed
+        all_market_data.extend(parsed.market_data)
+        all_summaries.append(parsed.executive_summary)
 
-    completion = client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a petrochemical analyst. Extract commodity prices (Platts, ICIS, Argus) and write a concise market executive summary."
-            },
-            {
-                "role": "user",
-                "content": f"Extract market data from this report:\n{raw_text}"
-            }
-        ],
-        response_format=PetrochemicalReport,
-    )
-
-    parsed = completion.choices[0].message.parsed
-
+    # Combine everything into one report
     today = datetime.date.today().isoformat()
     output = {
         "report_metadata": {"report_date": today},
-        "market_data": [item.dict() for item in parsed.market_data],
-        "ai_synthesis": {"executive_summary": parsed.executive_summary}
+        "market_data": [item.dict() for item in all_market_data],
+        "ai_synthesis": {"executive_summary": " | ".join(all_summaries)}
     }
 
     os.makedirs(DATA_FOLDER, exist_ok=True)
-    out_path = f"{DATA_FOLDER}/report_{today}.json"
-    with open(out_path, "w", encoding="utf-8") as f:
+    with open(f"{DATA_FOLDER}/report_{today}.json", "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
-
-    print(f"Successfully generated {out_path}")
 
 if __name__ == "__main__":
     run()

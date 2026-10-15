@@ -1,17 +1,36 @@
-name: Process Reports
-on: [push]
+name: Daily Report
+
+on:
+  push:
+    paths:
+      - 'reports/*.pdf' # Only run if a PDF is added
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions: { contents: write }
     steps:
       - uses: actions/checkout@v4
-      - run: pip install google-generativeai pdfplumber
-      - run: python main.py
-        env: { GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} }
-      - run: |
+      - uses: actions/setup-python@v4
+        with: {python-version: '3.10'}
+      
+      - name: Install dependencies
+        run: pip install google-generativeai pdfplumber
+        
+      - name: Run processor
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          mkdir -p data
+          python main.py
+          
+      - name: Commit and push
+        run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
           git add data/
-          git commit -m "update" || echo "no changes"
-          git push
+          git commit -m "Auto-update report" || echo "No changes"
+          git push origin main

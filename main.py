@@ -101,13 +101,19 @@ def run():
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
-# ... inside your run() function, right after the json.dump ...
-    print(f"Successfully generated {out_path}")
+# ... after json.dump data into 'output' ...
     
-    # ADD THESE TWO LINES TO HELP US DEBUG
-    print("Files in current directory:")
-    print(os.listdir('.'))
-    print(f"Files in data folder: {os.listdir(DATA_FOLDER)}")
-
-if __name__ == "__main__":
-    run()
+    # Get the real path of your repository on the GitHub server
+    workspace = os.environ.get('GITHUB_WORKSPACE', os.getcwd())
+    output_dir = os.path.join(workspace, "data")
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    filename = f"report_{datetime.date.today().isoformat()}.json"
+    out_path = os.path.join(output_dir, filename)
+    
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+        
+    print(f"DEBUG: Successfully saved to {out_path}")

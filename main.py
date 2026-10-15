@@ -72,5 +72,13 @@ def run():
     with open(f"{DATA_FOLDER}/report_{datetime.date.today().isoformat()}.json", "w") as f:
         json.dump(output, f, indent=2)
 
+# ... inside your run() function, right after the json.dump ...
+    print(f"Successfully generated {out_path}")
+    
+    # ADD THESE TWO LINES TO HELP US DEBUG
+    print("Files in current directory:")
+    print(os.listdir('.'))
+    print(f"Files in data folder: {os.listdir(DATA_FOLDER)}")
+
 if __name__ == "__main__":
     run()

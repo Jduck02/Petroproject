@@ -37,6 +37,13 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          echo "Files in data folder before push:"
+          ls -R data/
+          
+          git add data/
+          git commit -m "Auto-update report data" || echo "No changes to commit"
+          git push origin main
+          
           # Force add the data directory even if it's new
           git add data/
           

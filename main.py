@@ -74,7 +74,21 @@ def run():
         "market_data": all_data,
         "ai_synthesis": {"executive_summary": " | ".join(summaries)}
     }
-
+# ... after you define 'output' ...
+    
+    # Force creation in the current repository directory
+    output_dir = "data"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"DEBUG: Created {output_dir} directory.")
+    
+    filename = f"report_{datetime.date.today().isoformat()}.json"
+    out_path = os.path.join(output_dir, filename)
+    
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+        
+    print(f"DEBUG: File saved at {out_path}")
 # Change the output path to be absolutely sure it's in the /data folder
     # We use 'os.getcwd()' to tell the computer exactly where to save it
     base_path = os.getcwd()

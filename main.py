@@ -15,8 +15,14 @@ def run():
         text = "".join([p.extract_text() for p in pdf.pages])
 
     # 3. AI Processing
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    response = model.generate_content(f"Summarize this: {text[:10000]}")
+    # ... inside your run() function ...
+    
+    # Use the most stable current model
+    model = genai.GenerativeModel('gemini-1.5-flash-002')
+    
+    # Add a tiny delay to ensure the API connection is fully ready
+    import time
+    time.sleep(2)
     
     # 4. Save to /data/
     output = {"date": str(datetime.date.today()), "summary": response.text}

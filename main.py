@@ -1,33 +1,43 @@
+import os
+import glob
+import pdfplumber
+from openai import OpenAI
 import json
 import datetime
-from pydantic import BaseModel
-from typing import List, Optional
-from openai import OpenAI
 
-class PriceData(BaseModel):
-    Platts: float
-    ICIS: float
-    Argus: float
+# --- SETTINGS ---
+REPORT_FOLDER = "reports"
+client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
-class CommodityData(BaseModel):
-    commodity: str
-    prices: PriceData
+# --- 1. FIND THE LATEST PDF ---
+def get_latest_pdf():
+    list_of_files = glob.glob(f'{REPORT_FOLDER}/*.pdf')
+    if not list_of_files:
+        return None
+    return max(list_of_files, key=os.path.getctime)
 
-class PetrochemicalReport(BaseModel):
-    market_data: List[CommodityData]
-    ai_synthesis: dict
+# --- 2. READ PDF TEXT ---
+def read_pdf(file_path):
+    text = ""
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text()
+    return text
 
-# This script would normally pull from your raw sources
-# For now, it creates the structure the website expects
-def run_report():
-    # Placeholder data structure
-    data = {
-        "report_metadata": {"report_date": str(datetime.date.today())},
-        "market_data": [{"commodity": "Ethylene", "prices": {"Platts": 855.0, "ICIS": 850.0, "Argus": 852.5}}],
-        "ai_synthesis": {"executive_summary": "Market is stable with slight upward pressure."}
-    }
-    with open(f"data/report_{datetime.date.today()}.json", "w") as f:
-        json.dump(data, f)
+# --- 3. THE "BRAIN" (Simplified) ---
+def process_report():
+    pdf_path = get_latest_pdf()
+    if not pdf_path:
+        print("No reports found in /reports/ folder.")
+        return
+
+    raw_text = read_pdf(pdf_path)
+    
+    # Send to OpenAI (You would add your structured Pydantic logic here)
+    # This is where your AI synthesis happens
+    print(f"Processing: {pdf_path}")
+    
+    # ... (Insert your generate_structured_report function here) ...
 
 if __name__ == "__main__":
-    run_report()
+    process_report()

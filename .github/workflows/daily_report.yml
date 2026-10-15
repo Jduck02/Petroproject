@@ -37,11 +37,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Add the data folder
+          # Force add the data directory even if it's new
           git add data/
           
-          # Check if there are changes to commit
-          if git diff --quiet && git diff --staged --quiet; then
+          # Check for changes
+          if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Auto-update report data"

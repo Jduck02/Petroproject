@@ -1,0 +1,20 @@
+name: Daily Report
+on:
+  schedule:
+    - cron: '0 6 * * *'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install openai pydantic
+      - name: Run Script
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python main.py
+      - name: Save
+        run: |
+          git config user.name "Bot"
+          git add data/
+          git commit -m "Update Report"
+          git push

@@ -31,22 +31,17 @@ def read_pdf(file_path):
     return text
 
 def run():
-    # ADDED LOGGING
-    print("Current working directory:", os.getcwd())
-    print("Listing files in current directory:", os.listdir('.'))
+    # Use recursive=True and ** to find files even if there are weird names
+    search_path = os.path.join(REPORT_FOLDER, "**", "*.pdf")
+    pdf_files = glob.glob(search_path, recursive=True)
     
-    if os.path.exists(REPORT_FOLDER):
-        files_in_reports = os.listdir(REPORT_FOLDER)
-        print(f"Files found in {REPORT_FOLDER}: {files_in_reports}")
-    else:
-        print(f"ERROR: The folder {REPORT_FOLDER} does not exist!")
-        return
-
-    pdf_files = glob.glob(os.path.join(REPORT_FOLDER, "*.pdf"))
+    print(f"DEBUG: Searching in {search_path}")
+    print(f"DEBUG: Found {len(pdf_files)} files: {pdf_files}")
+    
     if not pdf_files:
-        print("No PDFs found matching *.pdf")
+        print("CRITICAL ERROR: No PDF files found.")
         return
-    # ... (rest of your existing code)
+    # ... rest of your code ...
 
     all_data = []
     summaries = []

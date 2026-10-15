@@ -1,56 +1,17 @@
-name: Daily Report
-
-on:
-  push:
-    paths:
-      - 'reports/**'
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
+name: Process Reports
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions: { contents: write }
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: pip install google-generativeai pydantic pdfplumber
-
-      - name: Run processor
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        run: python main.py
-
-      - name: Commit and push new report
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          echo "Files in data folder before push:"
-          ls -R data/
-          
+      - uses: actions/checkout@v4
+      - run: pip install google-generativeai pdfplumber
+      - run: python main.py
+        env: { GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} }
+      - run: |
+          git config user.name "bot"
+          git config user.email "bot@bot.com"
           git add data/
-          git commit -m "Auto-update report data" || echo "No changes to commit"
-          git push origin main
-          
-          # Force add the data directory even if it's new
-          git add data/
-          
-          # Check for changes
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Auto-update report data"
-            git push origin main
-          fi
+          git commit -m "update" || echo "no changes"
+          git push

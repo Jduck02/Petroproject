@@ -1,0 +1,10 @@
+{
+  "report_metadata": {"report_date": "2026-10-15"},
+  "market_data": [
+    {"commodity": "Ethylene", "prices": {"Platts": 855.0, "ICIS": 850.0, "Argus": 852.5}},
+    {"commodity": "Propylene", "prices": {"Platts": 900.0, "ICIS": 890.0, "Argus": 895.0}}
+  ],
+  "ai_synthesis": {
+    "executive_summary": "The petrochemical market is showing steady movement. Ethylene and Propylene prices are holding firm as we enter the mid-month period. This is a successful test of your automated dashboard!"
+  }
+}

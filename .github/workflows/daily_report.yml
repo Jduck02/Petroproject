@@ -3,15 +3,22 @@ name: Daily Report
 on:
   push:
     paths:
-      - 'reports/**' # Automatically triggers whenever you upload a new PDF!
-  workflow_dispatch: # Allows manual trigger
+      - 'reports/**'
+  workflow_dispatch:
+
+permissions: # <--- ADD THIS BLOCK
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Use v4 to avoid Node.js warnings
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Tell it to use the token
+      
+      # ... rest of your steps ...
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -31,5 +38,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git commit -m "Auto-update report data [skip ci]" || echo "No changes"
-          git push
+          # Only commit if there are changes
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update report data"
+            git push
+          fi

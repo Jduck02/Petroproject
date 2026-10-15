@@ -68,9 +68,17 @@ def run():
         "ai_synthesis": {"executive_summary": " | ".join(summaries)}
     }
 
-    os.makedirs(DATA_FOLDER, exist_ok=True)
-    with open(f"{DATA_FOLDER}/report_{datetime.date.today().isoformat()}.json", "w") as f:
-        json.dump(output, f, indent=2)
+# Change the output path to be absolutely sure it's in the /data folder
+    # We use 'os.getcwd()' to tell the computer exactly where to save it
+    base_path = os.getcwd()
+    output_dir = os.path.join(base_path, "data")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    filename = f"report_{datetime.date.today().isoformat()}.json"
+    out_path = os.path.join(output_dir, filename)
+    
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
 
 # ... inside your run() function, right after the json.dump ...
     print(f"Successfully generated {out_path}")

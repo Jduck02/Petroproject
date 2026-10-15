@@ -1,119 +1,26 @@
-import os
-import glob
-import json
-import datetime
-import pdfplumber
+import os, json, glob, datetime
 import google.generativeai as genai
-from pydantic import BaseModel
-from typing import List, Optional
+import pdfplumber
 
-# Setup
-REPORT_FOLDER = "reports"
-DATA_FOLDER = "data"
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-class PriceData(BaseModel):
-    Platts: Optional[float] = None
-    ICIS: Optional[float] = None
-    Argus: Optional[float] = None
-
-class CommodityData(BaseModel):
-    commodity: str
-    prices: PriceData
-
-# We use a simple structure for the free model
-def read_pdf(file_path):
-    text = ""
-    with pdfplumber.open(file_path) as pdf:
-        for page in pdf.pages:
-            t = page.extract_text()
-            if t: text += t + "\n"
-    return text
-
 def run():
-    # Use recursive=True and ** to find files even if there are weird names
-    search_path = os.path.join(REPORT_FOLDER, "**", "*.pdf")
-    pdf_files = glob.glob(search_path, recursive=True)
-    
-    print(f"DEBUG: Searching in {search_path}")
-    print(f"DEBUG: Found {len(pdf_files)} files: {pdf_files}")
-    
-    if not pdf_files:
-        print("CRITICAL ERROR: No PDF files found.")
-        return
-    # ... rest of your code ...
+    # 1. Find all PDFs
+    files = glob.glob("reports/*.pdf")
+    if not files: return 
 
-    all_data = []
-    summaries = []
+    # 2. Extract text (Simple)
+    text = ""
+    with pdfplumber.open(files[0]) as pdf:
+        text = "".join([p.extract_text() for p in pdf.pages])
 
+    # 3. AI Processing
     model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(f"Summarize this: {text[:10000]}")
+    
+    # 4. Save to /data/
+    output = {"date": str(datetime.date.today()), "summary": response.text}
+    with open(f"data/report_{datetime.date.today()}.json", "w") as f:
+        json.dump(output, f)
 
-    for pdf_path in pdf_files:
-        print(f"Processing: {pdf_path}")
-        raw_text = read_pdf(pdf_path)[:15000]
-        
-        prompt = f"""
-        Extract petrochemical prices and a summary from this text: {raw_text}
-        Return ONLY valid JSON in this format:
-        {{
-            "market_data": [{{"commodity": "Name", "prices": {{"Platts": 0.0, "ICIS": 0.0, "Argus": 0.0}}}}],
-            "summary": "Short summary here"
-        }}
-        """
-        
-        response = model.generate_content(prompt)
-        # Clean up Gemini's response to get pure JSON
-        clean_json = response.text.replace('```json', '').replace('```', '').strip()
-        data = json.loads(clean_json)
-        
-        all_data.extend(data['market_data'])
-        summaries.append(data['summary'])
-
-    output = {
-        "report_metadata": {"report_date": datetime.date.today().isoformat()},
-        "market_data": all_data,
-        "ai_synthesis": {"executive_summary": " | ".join(summaries)}
-    }
-# ... after you define 'output' ...
-    
-    # Force creation in the current repository directory
-    output_dir = "data"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        print(f"DEBUG: Created {output_dir} directory.")
-    
-    filename = f"report_{datetime.date.today().isoformat()}.json"
-    out_path = os.path.join(output_dir, filename)
-    
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
-        
-    print(f"DEBUG: File saved at {out_path}")
-# Change the output path to be absolutely sure it's in the /data folder
-    # We use 'os.getcwd()' to tell the computer exactly where to save it
-    base_path = os.getcwd()
-    output_dir = os.path.join(base_path, "data")
-    os.makedirs(output_dir, exist_ok=True)
-    
-    filename = f"report_{datetime.date.today().isoformat()}.json"
-    out_path = os.path.join(output_dir, filename)
-    
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
-
-# ... after json.dump data into 'output' ...
-    
-    # Get the real path of your repository on the GitHub server
-    workspace = os.environ.get('GITHUB_WORKSPACE', os.getcwd())
-    output_dir = os.path.join(workspace, "data")
-    
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
-    filename = f"report_{datetime.date.today().isoformat()}.json"
-    out_path = os.path.join(output_dir, filename)
-    
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
-        
-    print(f"DEBUG: Successfully saved to {out_path}")
+if __name__ == "__main__": run()
